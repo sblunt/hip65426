@@ -1,2 +1,7 @@
 old/*
 results/*
+data/bt-settl-cifist
+data/*.dat
+data/*.tgz
+data/alpha*.fits
+species*

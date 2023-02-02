@@ -51,6 +51,15 @@ mass_err = 0.04
 num_secondary_bodies = 1
 data_table = read_input.read_file(input_file)
 
+if not lit_astrom:
+    data_table = data_table[-3:]
+if not first_grav:
+    data_table = data_table[0:-1 & -1]
+if not second_grav:
+    data_table = data_table[:-1]
+
+print(data_table)
+
 HIP654_system = system.System(
     num_secondary_bodies, data_table, m_st, plx, fit_secondary_mass=False, mass_err=mass_err, 
     plx_err=plx_err
@@ -62,14 +71,15 @@ assert not HIP654_system.fit_secondary_mass
 assert not HIP654_system.track_planet_perturbs
 
 
+
 if run_fit:
 
     # run MCMC
     num_threads = 20
     num_temps = 20
     num_walkers = 1000
-    num_steps = 1000000 # n_walkers x n_steps_per_walker
-    burn_steps = 10000
+    num_steps = 10_000_000 # n_walkers x n_steps_per_walker
+    burn_steps = 10_000
     thin = 100
 
     HIP654_sampler = sampler.MCMC(
@@ -86,9 +96,10 @@ if run_fit:
 # make corner plot
 HIP654_results = results.Results() # create blank results object for loading
 HIP654_results.load_results('{}/chains.hdf5'.format(savedir))
-fig = HIP654_results.plot_corner()
-plt.savefig('{}/corner.png'.format(savedir), dpi=250)
+
+# fig = HIP654_results.plot_corner()
+# plt.savefig('{}/corner.png'.format(savedir), dpi=250)
 
 # make orbit plot
 fig = HIP654_results.plot_orbits()
-plt.savefig('{}/orbit_IAD{}.png'.format(savedir), dpi=250)
+plt.savefig('{}/orbit.png'.format(savedir), dpi=250)
