@@ -7,11 +7,12 @@ from orbitize import results
 
 """
 Fits to run:
-1. lit astrometry only (True, False, False)
-2. lit astrometry +1 GRAVITY epoch (True, True, False)
-3. lit astrometry +2 GRAVITY epochs (True, True, True)
-4. GRAVITY astrometry only (False, True, True)
-5. accepted fit with Kelly's prior
+1. lit astrometry only (True, False, False, False)
+2. lit astrometry +1 GRAVITY epoch (True, True, False, False)
+3. lit astrometry +2 GRAVITY epochs (True, True, True, False)
+4. GRAVITY astrometry only (False, True, True, False)
+5. all astrometry with e fixed to 0 (True, True, True, True)
+6. accepted fit with Kelly's prior
 """
 
 
@@ -20,9 +21,11 @@ Begin keywords <<
 """
 run_fit = True
 
-lit_astrom = False
+lit_astrom = True
 first_grav = True
-second_grav = True
+second_grav = False
+
+fix_ecc = False
 
 savedir = 'results/'
 
@@ -35,6 +38,8 @@ if first_grav:
     savedir += 'with_first_vlti_point'
 if second_grav:
     savedir += 'with_second_vlti_point'
+if fix_ecc:
+    savedir += '_fixed_ecc'
 """
 >> End keywords
 """
@@ -65,11 +70,14 @@ HIP654_system = system.System(
     plx_err=plx_err
 )
 
+# fix eccentricity to 0
+if fix_ecc:
+    HIP654_system.sys_priors[HIP654_system.param_idx['ecc1']] = 0
+
 # Check that orbitizie! initialized everything correctly.
 # (I wrote the code, therefore I do not trust the code.)
 assert not HIP654_system.fit_secondary_mass
 assert not HIP654_system.track_planet_perturbs
-
 
 
 if run_fit:
@@ -78,7 +86,7 @@ if run_fit:
     num_threads = 20
     num_temps = 20
     num_walkers = 1000
-    num_steps = 10_000_000 # n_walkers x n_steps_per_walker
+    num_steps = 50_000_000 # n_walkers x n_steps_per_walker
     burn_steps = 10_000
     thin = 100
 
@@ -97,9 +105,9 @@ if run_fit:
 HIP654_results = results.Results() # create blank results object for loading
 HIP654_results.load_results('{}/chains.hdf5'.format(savedir))
 
-# fig = HIP654_results.plot_corner()
-# plt.savefig('{}/corner.png'.format(savedir), dpi=250)
+fig = HIP654_results.plot_corner()
+plt.savefig('{}/corner.png'.format(savedir), dpi=250)
 
 # make orbit plot
-fig = HIP654_results.plot_orbits()
+fig = HIP654_results.plot_orbits(num_epochs_to_plot=500)
 plt.savefig('{}/orbit.png'.format(savedir), dpi=250)
