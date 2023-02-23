@@ -5,3 +5,6 @@ data/*.dat
 data/*.tgz
 data/alpha*.fits
 species*
+
+.ipynb_checkpoints*
+multinest/*
