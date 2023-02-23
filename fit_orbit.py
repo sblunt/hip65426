@@ -7,12 +7,24 @@ from orbitize import results
 
 """
 Fits to run:
-1. lit astrometry only (True, False, False, False)
-2. lit astrometry +1 GRAVITY epoch (True, True, False, False)
-3. lit astrometry +2 GRAVITY epochs (True, True, True, False)
-4. GRAVITY astrometry only (False, True, True, False)
-5. all astrometry with e fixed to 0 (True, True, True, True)
-6. accepted fit with Kelly's prior
+1. lit astrometry only (True, False, False, False, False)
+2. lit astrometry + first GRAVITY epoch (True, True, False, False, False)
+2.5. lit astrometry + second GRAVITY epoch (True, False, True, False, False)
+3. lit astrometry +2 GRAVITY epochs (True, True, True, False, False)
+4. GRAVITY astrometry only (False, True, True, False, False)
+5. all astrometry with e fixed to 0 (True, True, True, True, False)
+6. accepted fit (#3) with linearly decreasing prior on e (True, True, True, False, True)
+
+Fits converged:
+2
+5
+
+Fits need to be run:
+1 (running)
+2.5 (running)
+3 (running)
+4 (running)
+6 (running)
 """
 
 
@@ -23,9 +35,9 @@ run_fit = True
 
 lit_astrom = True
 first_grav = True
-second_grav = False
-
+second_grav = True
 fix_ecc = False
+lin_ecc_prior = True
 
 savedir = 'results/'
 
@@ -74,6 +86,10 @@ HIP654_system = system.System(
 if fix_ecc:
     HIP654_system.sys_priors[HIP654_system.param_idx['ecc1']] = 0
 
+# set a linearly decreasing prior on ecc
+if lin_ecc_prior:
+    HIP654_system.sys_priors[HIP654_system.param_idx['ecc1']] = priors.LinearPrior(-2.18, 2.01)
+
 # Check that orbitizie! initialized everything correctly.
 # (I wrote the code, therefore I do not trust the code.)
 assert not HIP654_system.fit_secondary_mass
@@ -83,7 +99,7 @@ assert not HIP654_system.track_planet_perturbs
 if run_fit:
 
     # run MCMC
-    num_threads = 20
+    num_threads = 15
     num_temps = 20
     num_walkers = 1000
     num_steps = 50_000_000 # n_walkers x n_steps_per_walker
