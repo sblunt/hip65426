@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+from astropy.time import Time
 
 from orbitize import system, read_input, priors, sampler
 from orbitize import results
@@ -31,13 +32,13 @@ Fits need to be run:
 """
 Begin keywords <<
 """
-run_fit = True
+run_fit = False
 
 lit_astrom = True
 first_grav = True
 second_grav = True
-fix_ecc = False
-lin_ecc_prior = True
+fix_ecc = True
+lin_ecc_prior = False
 
 savedir = 'results/'
 
@@ -52,6 +53,8 @@ if second_grav:
     savedir += 'with_second_vlti_point'
 if fix_ecc:
     savedir += '_fixed_ecc'
+if lin_ecc_prior:
+    savedir += '_linear_ecc'
 """
 >> End keywords
 """
@@ -121,9 +124,26 @@ if run_fit:
 HIP654_results = results.Results() # create blank results object for loading
 HIP654_results.load_results('{}/chains.hdf5'.format(savedir))
 
-fig = HIP654_results.plot_corner()
-plt.savefig('{}/corner.png'.format(savedir), dpi=250)
+if fix_ecc:
+    param_list = ['sma1','inc1','aop1','pan1','tau1','mtot','plx']
+else:
+    param_list = None
+# fig = HIP654_results.plot_corner(param_list=param_list)
+# plt.savefig('{}/corner.png'.format(savedir), dpi=250)
 
 # make orbit plot
-fig = HIP654_results.plot_orbits(num_epochs_to_plot=500)
+fig = HIP654_results.plot_orbits(num_epochs_to_plot=500, plot_astrometry=False)
+radec_ax, sep_ax, pa_ax, cbar_ax = fig.axes
+
+sep, serr, pa, paerr = data_table['quant1'],  data_table['quant1_err'], data_table['quant2'], data_table['quant2_err']
+epoch = Time(data_table['epoch'], format='mjd').decimalyear
+
+sphere_mask = [0,1,2,3,6,7]
+naco_mask = [4,5]
+grav_mask = [9,10]
+sep_ax.errorbar(epoch[sphere_mask], sep[sphere_mask], serr[sphere_mask], marker='^', ec='purple', facecolor='white',ls='', label='SPHERE')
+sep_ax.errorbar(epoch[naco_mask], sep[naco_mask], serr[naco_mask], marker='s', ls='', color='purple', label='NACO')
+sep_ax.legend()
+pa_ax.errorbar(epoch[sphere_mask], pa[sphere_mask], paerr[sphere_mask], marker='^', ec='purple', facecolor='white',ls='')
+pa_ax.errorbar(epoch[naco_mask], pa[naco_mask], paerr[naco_mask], marker='s', ls='', color='purple')
 plt.savefig('{}/orbit.png'.format(savedir), dpi=250)
