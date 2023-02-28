@@ -1,6 +1,8 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+from matplotlib import patches
+import matplotlib.transforms as transforms
 from astropy.time import Time
 
 from orbitize import system, read_input, priors, sampler
@@ -37,7 +39,7 @@ run_fit = False
 lit_astrom = True
 first_grav = True
 second_grav = True
-fix_ecc = True
+fix_ecc = False
 lin_ecc_prior = False
 
 savedir = 'results/'
@@ -70,6 +72,7 @@ mass_err = 0.04
 
 num_secondary_bodies = 1
 data_table = read_input.read_file(input_file)
+insts = data_table['instrument']
 
 if not lit_astrom:
     data_table = data_table[-3:]
@@ -132,18 +135,90 @@ else:
 # plt.savefig('{}/corner.png'.format(savedir), dpi=250)
 
 # make orbit plot
-fig = HIP654_results.plot_orbits(num_epochs_to_plot=500, plot_astrometry=False)
+fig = HIP654_results.plot_orbits(num_epochs_to_plot=500, start_mjd=56000, plot_astrometry=False)
 radec_ax, sep_ax, pa_ax, cbar_ax = fig.axes
 
 sep, serr, pa, paerr = data_table['quant1'],  data_table['quant1_err'], data_table['quant2'], data_table['quant2_err']
 epoch = Time(data_table['epoch'], format='mjd').decimalyear
 
-sphere_mask = [0,1,2,3,6,7]
-naco_mask = [4,5]
-grav_mask = [9,10]
-sep_ax.errorbar(epoch[sphere_mask], sep[sphere_mask], serr[sphere_mask], marker='^', ec='purple', facecolor='white',ls='', label='SPHERE')
+sphere_mask = np.where(insts == 'SPHERE')[0]
+naco_mask = np.where(insts == 'NACO')[0]
+grav_mask = np.where(insts == 'GRAVITY')[0]
+
+gravity_sep, gravity_pa = system.radec2seppa(sep[grav_mask], pa[grav_mask])
+gravity_ra, gravity_dec = sep[grav_mask], pa[grav_mask]
+gravity_raerr, gravity_decerr, gravity_corr = data_table['quant1_err'][grav_mask], data_table['quant2_err'][grav_mask], data_table['quant12_corr'][grav_mask], 
+
+sep_ax.errorbar(epoch[sphere_mask], sep[sphere_mask], serr[sphere_mask], marker='^', color='purple', markeredgecolor='purple', markerfacecolor='white',ls='', label='SPHERE')
 sep_ax.errorbar(epoch[naco_mask], sep[naco_mask], serr[naco_mask], marker='s', ls='', color='purple', label='NACO')
+sep_ax.scatter(epoch[grav_mask], gravity_sep, label='GRAVITY', zorder=20, color='hotpink')
 sep_ax.legend()
-pa_ax.errorbar(epoch[sphere_mask], pa[sphere_mask], paerr[sphere_mask], marker='^', ec='purple', facecolor='white',ls='')
+
+pa_ax.errorbar(epoch[sphere_mask], pa[sphere_mask], paerr[sphere_mask], marker='^', color='purple', markeredgecolor='purple', markerfacecolor='white',ls='')
 pa_ax.errorbar(epoch[naco_mask], pa[naco_mask], paerr[naco_mask], marker='s', ls='', color='purple')
+pa_ax.scatter(epoch[grav_mask], gravity_pa, zorder=20, color='hotpink')
+
+l, b, w, h = cbar_ax.get_position().bounds
+cbar_ax.set_position([l - 0.05, b, w, h])
+
+l, b, w, h = pa_ax.get_position().bounds
+pa_ax.set_position([l - 0.125, b, w, h])
+
+
+def confidence_ellipse(x, y, corr, x_unc, y_unc, ax, n_std=3.0, facecolor='hotpink', alpha=1):
+    """
+    Create a plot of the covariance confidence ellipse of *x* and *y*.
+    (shamelessly stolen from matplotlib docs)
+    """
+
+    # Using a special case to obtain the eigenvalues of this
+    # two-dimensional dataset.
+    ell_radius_x = np.sqrt(1 + corr)
+    ell_radius_y = np.sqrt(1 - corr)
+    ellipse = patches.Ellipse((0,0), width=ell_radius_x * 2, height=ell_radius_y * 2,
+                      facecolor=facecolor, alpha=alpha, zorder=20)
+
+    # Calculating the standard deviation of x from
+    # the squareroot of the variance and multiplying
+    # with the given number of standard deviations.
+    scale_x = x_unc * n_std
+    mean_x = x
+
+    # calculating the standard deviation of y ...
+    scale_y = y_unc * n_std
+    mean_y = y
+
+    transf = transforms.Affine2D() \
+        .rotate_deg(45) \
+        .scale(scale_x, scale_y) \
+        .translate(mean_x, mean_y)
+
+    ellipse.set_transform(transf + ax.transData)
+    return ax.add_patch(ellipse)
+
+fig.subplots_adjust(right=0.75)
+for i in np.arange(len(grav_mask)):
+
+    grav_ax = fig.add_axes([0.8, b + .42*i, 0.175, h])
+    for n_std in [1,2]:
+        ellipse = confidence_ellipse(
+            gravity_ra[i], gravity_dec[i], gravity_corr[i], gravity_raerr[i], 
+            gravity_decerr[i], grav_ax, n_std=n_std, alpha=1 - n_std/4
+        )
+
+    grav_ax.set_xlim(gravity_ra[i] + 1, gravity_ra[i] - 1)
+    grav_ax.set_ylim(gravity_dec[i] - 1, gravity_dec[i] + 1)
+    grav_ax.set_aspect('equal')
+
+    if i == 0:
+        grav_ax.set_xlabel('$\Delta$RA [mas]')
+    grav_ax.set_ylabel('$\Delta$Dec [mas]')
+
+    for j in np.arange(len(sep_ax.lines) - 2):
+        orbittracks_sep = sep_ax.lines[j].get_ydata()
+        orbittracks_pa = pa_ax.lines[j].get_ydata()
+        ra2plot, dec2plot = system.seppa2radec(orbittracks_sep, orbittracks_pa)
+        grav_ax.plot(ra2plot, dec2plot, color='grey', alpha=0.5)
+
+radec_ax.set_aspect('equal')
 plt.savefig('{}/orbit.png'.format(savedir), dpi=250)
