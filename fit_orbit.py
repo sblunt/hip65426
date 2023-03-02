@@ -20,21 +20,22 @@ Fits to run:
 
 Fits converged:
 2
+2.5 
+3
+4
 5
+6
 
 Fits need to be run:
 1 (running)
-2.5 (running)
-3 (running)
-4 (running)
-6 (running)
 """
 
+np.random.seed(10)
 
 """
 Begin keywords <<
 """
-run_fit = False
+run_fit = True
 
 lit_astrom = True
 first_grav = True
@@ -108,8 +109,8 @@ if run_fit:
     num_threads = 15
     num_temps = 20
     num_walkers = 1000
-    num_steps = 50_000_000 # n_walkers x n_steps_per_walker
-    burn_steps = 10_000
+    num_steps = 250_000_000 # n_walkers x n_steps_per_walker
+    burn_steps = 100_000
     thin = 100
 
     HIP654_sampler = sampler.MCMC(
@@ -131,8 +132,11 @@ if fix_ecc:
     param_list = ['sma1','inc1','aop1','pan1','tau1','mtot','plx']
 else:
     param_list = None
-# fig = HIP654_results.plot_corner(param_list=param_list)
-# plt.savefig('{}/corner.png'.format(savedir), dpi=250)
+
+# median_values = np.median(HIP654_results.post, axis=0)
+# range_values = np.ones_like(median_values)*0.997 # Plot only 3-sigma range for each parameter
+fig = HIP654_results.plot_corner(param_list=param_list, range=[(45, 90), (0.2,0.8), (100, 120),(120,250),(130,200),(0.3,0.65),(9.15,9.45),(1.8,2.1)])
+plt.savefig('{}/corner.png'.format(savedir), dpi=250)
 
 # make orbit plot
 fig = HIP654_results.plot_orbits(num_epochs_to_plot=500, start_mjd=56000, plot_astrometry=False)
@@ -145,8 +149,16 @@ sphere_mask = np.where(insts == 'SPHERE')[0]
 naco_mask = np.where(insts == 'NACO')[0]
 grav_mask = np.where(insts == 'GRAVITY')[0]
 
-gravity_sep, gravity_pa = system.radec2seppa(sep[grav_mask], pa[grav_mask])
 gravity_ra, gravity_dec = sep[grav_mask], pa[grav_mask]
+sphere_ra, sphere_dec = system.seppa2radec(sep[sphere_mask], pa[sphere_mask])
+naco_ra, naco_dec = system.seppa2radec(sep[naco_mask], pa[naco_mask])
+
+radec_ax.scatter(sphere_ra, sphere_dec, marker='o', color='hotpink', zorder=20, s=3)
+radec_ax.scatter(naco_ra, naco_dec, marker='o', color='hotpink', zorder=20, s=3)
+radec_ax.scatter(gravity_ra, gravity_dec, marker='o', color='hotpink', zorder=20, s=3)
+
+gravity_sep, gravity_pa = system.radec2seppa(sep[grav_mask], pa[grav_mask])
+
 gravity_raerr, gravity_decerr, gravity_corr = data_table['quant1_err'][grav_mask], data_table['quant2_err'][grav_mask], data_table['quant12_corr'][grav_mask], 
 
 sep_ax.errorbar(epoch[sphere_mask], sep[sphere_mask], serr[sphere_mask], marker='^', color='purple', markeredgecolor='purple', markerfacecolor='white',ls='', label='SPHERE')
@@ -199,15 +211,15 @@ def confidence_ellipse(x, y, corr, x_unc, y_unc, ax, n_std=3.0, facecolor='hotpi
 fig.subplots_adjust(right=0.75)
 for i in np.arange(len(grav_mask)):
 
-    grav_ax = fig.add_axes([0.8, b + .42*i, 0.175, h])
+    grav_ax = fig.add_axes([0.82, b + .42*i, 0.175, h])
     for n_std in [1,2]:
         ellipse = confidence_ellipse(
             gravity_ra[i], gravity_dec[i], gravity_corr[i], gravity_raerr[i], 
             gravity_decerr[i], grav_ax, n_std=n_std, alpha=1 - n_std/4
         )
 
-    grav_ax.set_xlim(gravity_ra[i] + 1, gravity_ra[i] - 1)
-    grav_ax.set_ylim(gravity_dec[i] - 1, gravity_dec[i] + 1)
+    grav_ax.set_xlim(gravity_ra[i] + 0.5, gravity_ra[i] - 0.5)
+    grav_ax.set_ylim(gravity_dec[i] - 0.5, gravity_dec[i] + 0.5)
     grav_ax.set_aspect('equal')
 
     if i == 0:
@@ -218,7 +230,9 @@ for i in np.arange(len(grav_mask)):
         orbittracks_sep = sep_ax.lines[j].get_ydata()
         orbittracks_pa = pa_ax.lines[j].get_ydata()
         ra2plot, dec2plot = system.seppa2radec(orbittracks_sep, orbittracks_pa)
-        grav_ax.plot(ra2plot, dec2plot, color='grey', alpha=0.5)
+        grav_ax.plot(ra2plot, dec2plot, color='lightgrey')
+        grav_ax.text(gravity_ra[i] + 0.45, gravity_dec[i] + 0.4, 'GRAVITY Epoch {}'.format(i + 1))
 
+pa_ax.set_xlabel('Epoch [year]')
 radec_ax.set_aspect('equal')
 plt.savefig('{}/orbit.png'.format(savedir), dpi=250)
