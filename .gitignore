@@ -8,3 +8,5 @@ species*
 
 .ipynb_checkpoints*
 multinest/*
+
+data/HIP_65426_B_final_noLSS_spec.txt
