@@ -19,15 +19,16 @@ Fits to run:
 6. accepted fit (#3) with linearly decreasing prior on e (True, True, True, False, True)
 
 Fits converged:
+
+
+Fits need to be run:
+1
 2
 2.5 
 3
 4
 5
 6
-
-Fits need to be run:
-1 (running)
 """
 
 np.random.seed(10)
@@ -41,7 +42,7 @@ lit_astrom = True
 first_grav = True
 second_grav = True
 fix_ecc = False
-lin_ecc_prior = False
+lin_ecc_prior = True
 
 savedir = 'results/'
 
@@ -102,16 +103,15 @@ if lin_ecc_prior:
 assert not HIP654_system.fit_secondary_mass
 assert not HIP654_system.track_planet_perturbs
 
+# run MCMC
+num_threads = 15
+num_temps = 20
+num_walkers = 1000
+num_steps = 1_000_000_000 # n_walkers x n_steps_per_walker
+burn_steps = 100_000
+thin = 100
 
 if run_fit:
-
-    # run MCMC
-    num_threads = 15
-    num_temps = 20
-    num_walkers = 1000
-    num_steps = 250_000_000 # n_walkers x n_steps_per_walker
-    burn_steps = 100_000
-    thin = 100
 
     HIP654_sampler = sampler.MCMC(
         HIP654_system, num_threads=num_threads, num_temps=num_temps, 
@@ -128,6 +128,11 @@ if run_fit:
 HIP654_results = results.Results() # create blank results object for loading
 HIP654_results.load_results('{}/chains.hdf5'.format(savedir))
 
+# chop chains
+num_chop = 1000
+reshaped_post = HIP654_results.post.reshape((num_walkers,num_steps//num_walkers//thin,HIP654_results.post.shape[1]))
+HIP654_results.post = reshaped_post[:,-num_chop:,:].reshape((-1,HIP654_results.post.shape[1]))
+
 if fix_ecc:
     param_list = ['sma1','inc1','aop1','pan1','tau1','mtot','plx']
 else:
@@ -135,7 +140,11 @@ else:
 
 # median_values = np.median(HIP654_results.post, axis=0)
 # range_values = np.ones_like(median_values)*0.997 # Plot only 3-sigma range for each parameter
-fig = HIP654_results.plot_corner(param_list=param_list, range=[(45, 90), (0.2,0.8), (100, 120),(120,250),(130,200),(0.3,0.65),(9.15,9.45),(1.8,2.1)])
+fig = HIP654_results.plot_corner(
+    param_list=param_list, range=[
+        (40, 120), 1, 1, 1, 1, 1, 1, 1
+    ]
+)
 plt.savefig('{}/corner.png'.format(savedir), dpi=250)
 
 # make orbit plot
