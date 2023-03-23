@@ -39,16 +39,16 @@ models = OrderedDict()
 models['\\texttt{BT-Settl} (G only, yes GP)'] = get_chains(gravity=True, gp=True, teff_prior='teffhi')
 models['\\texttt{BT-Settl} (G only, yes GP) (teff lo)'] = get_chains(gravity=True, gp=True, teff_prior='tefflo')
 
-models['\\texttt{BT-Settl} (S only, yes GP)'] = get_chains(sinfoni=True, gp=True, teff_prior='teffhi')
-models['\\texttt{BT-Settl} (S only, yes GP) (teff lo)'] = get_chains(sinfoni=True, gp=True, teff_prior='tefflo')
+models['\\texttt{BT-Settl} (Si only, yes GP)'] = get_chains(sinfoni=True, gp=True, teff_prior='teffhi')
+models['\\texttt{BT-Settl} (Si only, yes GP) (teff lo)'] = get_chains(sinfoni=True, gp=True, teff_prior='tefflo')
 
 models['\\texttt{BT-Settl} (G only, no GP)'] = get_chains(gravity=True, teff_prior='teffhi')
 models['\\texttt{BT-Settl} (G only, no GP) (teff lo)'] = get_chains(gravity=True, teff_prior='tefflo')
 
-# models['\\texttt{BT-Settl} (S only, no  GP)'] = get_chains(sinfoni=True, teff_prior='teffhi')
-# models['\\texttt{BT-Settl} (S only, no GP) (teff lo)'] = get_chains(sinfoni=True, teff_prior='tefflo')
+models['\\texttt{BT-Settl} (Si only, no GP)'] = get_chains(sinfoni=True, teff_prior='teffhi')
+models['\\texttt{BT-Settl} (Si only, no GP) (teff lo)'] = get_chains(sinfoni=True, teff_prior='tefflo')
 
-models['\\texttt{Exo-REM} (S+G, yes GP)'] = get_chains(model='exo-rem', sinfoni=True, gravity=True, gp=True, teff_prior=None)
+models['\\texttt{Exo-REM} (Si+G, yes GP)'] = get_chains(model='exo-rem', sinfoni=True, gravity=True, gp=True, teff_prior=None)
 
 def format_post(array, decimals=0):
     quantiles = np.quantile(array, [.16,.5,.84])
@@ -94,7 +94,7 @@ for model_name in models.keys():
     else:
         co = format_post(models[model_name].co.values, decimals=2)
         feh = format_post(models[model_name].feh.values, decimals=3)
-    if 'SINFONI' in model_name:
+    if 'Si' in model_name:
         rv = format_post(models[model_name].rv_sinfoni.values, decimals=0)
     else:
         rv = '--'

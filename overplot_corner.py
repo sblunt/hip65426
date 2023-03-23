@@ -13,13 +13,15 @@ def combine_teff_hilow(fitname='sinfoni', model='bt-settl-cifist'):
     """
 
     if 'nosphereGP' in fitname:
-        names = ['Teff', 'logg','R','plx', 'lnlike']
+        names = ['Teff', 'logg','R','plx']
         labels=['T$_{{\\mathrm{{eff}}}}$ [K]', '$\\log{{g}}$','R [R$_J$]','$\pi$ [mas]']
     else:
-        names = ['Teff', 'logg','R','plx','gp_len','gp_amp', 'lnlike']
+        names = ['Teff', 'logg','R','plx','gp_len','gp_amp']
         labels=['T$_{{\\mathrm{{eff}}}}$ [K]', '$\\log{{g}}$','R [R$_J$]','$\pi$ [mas]', '$\\log{{l_{{SPHERE_IFU}}}}$', '$A_{{SPHERE_IFU}}$']
+    if 'sinfoni' in fitname:
+        names += ['rv_sinfoni']
 
-
+    names += ['']
     loteff_post = pd.read_csv(
         'results/{}_tefflo_{}/multinest/post_equal_weights.dat'.format(fitname, model),
         delim_whitespace=True,
@@ -27,14 +29,14 @@ def combine_teff_hilow(fitname='sinfoni', model='bt-settl-cifist'):
     )
 
     hiteff_post = pd.read_csv(
-        'results/{}_{}/multinest/post_equal_weights.dat'.format(fitname, model),
+        'results/{}_teffhi_{}/multinest/post_equal_weights.dat'.format(fitname, model),
         delim_whitespace=True,
         names = names
     )
 
     return pd.concat([loteff_post, hiteff_post]), labels
 
-sphereGP = True
+sphereGP = False
 fitname = 'sinfoni'
 if not sphereGP:
     fitname += '_nosphereGP'
@@ -46,11 +48,11 @@ if not sphereGP:
 gravity_fit, labels = combine_teff_hilow(fitname=fitname)
 
 fig = corner.corner(
-    sinfoni_fit[sinfoni_fit.keys()[:-1]], 
-    weights=np.ones(len(sinfoni_fit)) / len(sinfoni_fit), bins=25, labels=labels, plot_datapoints=False, color='hotpink', plot_density=False
+    sinfoni_fit[sinfoni_fit.keys()[:-2]], 
+    bins=25, labels=labels, plot_datapoints=False, color='hotpink', plot_density=False, weights=np.ones(len(sinfoni_fit)) / len(sinfoni_fit), 
 )
 corner.corner(
-    gravity_fit[gravity_fit.keys()[:-1]], 
-    weights=np.ones(len(gravity_fit)) / len(gravity_fit), bins=25, labels=labels, fig=fig, plot_datapoints=False, color='purple', plot_density=False
+    gravity_fit[gravity_fit.keys()[:-1]], fig=fig,
+    bins=25, labels=labels, plot_datapoints=False, color='purple', plot_density=False, weights=np.ones(len(gravity_fit)) / len(gravity_fit), 
 )
 plt.savefig('results/plots/sinfoni_gravity_corner_sphereGP{}.png'.format(sphereGP), dpi=250)
