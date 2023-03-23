@@ -107,7 +107,7 @@ assert not HIP654_system.track_planet_perturbs
 num_threads = 15
 num_temps = 20
 num_walkers = 1000
-num_steps = 1_000_000_000 # n_walkers x n_steps_per_walker
+num_steps = 100_000_000 # n_walkers x n_steps_per_walker
 burn_steps = 100_000
 thin = 100
 
