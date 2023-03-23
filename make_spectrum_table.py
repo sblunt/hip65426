@@ -10,7 +10,10 @@ Little script to grab all the results of spectral fits and make a nice latex tab
 
 def get_chains(gravity=False, sinfoni=False, model='bt-settl-cifist', gp=False, teff_prior=None):
     
-    header = ['teff', 'logg','rad','plx']
+    header = ['teff', 'logg']
+    if model == 'exo-rem':
+        header += ['co', 'feh']
+    header += ['rad','plx']
     name = ''
     if gravity:
         name += 'gravity_'
@@ -29,24 +32,25 @@ def get_chains(gravity=False, sinfoni=False, model='bt-settl-cifist', gp=False, 
 
     chains_file = 'results/{}/multinest/post_equal_weights.dat'.format(name)
     chains = pd.read_csv(chains_file, delim_whitespace=True, names=header)
+
     return chains
 
 models = OrderedDict()
-models['\\texttt{BT-Settl} (GRAVITY only, SPHERE GP)'] = get_chains(gravity=True, gp=True, teff_prior='teffhi')
-models['\\texttt{BT-Settl} (GRAVITY only, SPHERE GP) (teff lo)'] = get_chains(gravity=True, gp=True, teff_prior='tefflo')
+models['\\texttt{BT-Settl} (G only, yes GP)'] = get_chains(gravity=True, gp=True, teff_prior='teffhi')
+models['\\texttt{BT-Settl} (G only, yes GP) (teff lo)'] = get_chains(gravity=True, gp=True, teff_prior='tefflo')
 
-# models['\\texttt{BT-Settl} (SINFONI only, SPHERE GP)'] = get_chains(sinfoni=True, gp=True, teff_prior='teffhi')
-models['\\texttt{BT-Settl} (SINFONI only, SPHERE GP) (teff lo)'] = get_chains(sinfoni=True, gp=True, teff_prior='tefflo')
+models['\\texttt{BT-Settl} (S only, yes GP)'] = get_chains(sinfoni=True, gp=True, teff_prior='teffhi')
+models['\\texttt{BT-Settl} (S only, yes GP) (teff lo)'] = get_chains(sinfoni=True, gp=True, teff_prior='tefflo')
 
-# models['\\texttt{BT-Settl} (GRAVITY only, no SPHERE GP)'] = get_chains(gravity=True, teff_prior='teffhi')
-# models['\\texttt{BT-Settl} (GRAVITY only, no SPHERE GP) (teff lo)'] = get_chains(gravity=True, teff_prior='tefflo')
+models['\\texttt{BT-Settl} (G only, no GP)'] = get_chains(gravity=True, teff_prior='teffhi')
+models['\\texttt{BT-Settl} (G only, no GP) (teff lo)'] = get_chains(gravity=True, teff_prior='tefflo')
 
-# models['\\texttt{BT-Settl} (SINFONI only, no SPHERE GP)'] = get_chains(sinfoni=True, teff_prior='teffhi')
-# models['\\texttt{BT-Settl} (SINFONI only, no SPHERE GP) (teff lo)'] = get_chains(sinfoni=True, teff_prior='tefflo')
+# models['\\texttt{BT-Settl} (S only, no  GP)'] = get_chains(sinfoni=True, teff_prior='teffhi')
+# models['\\texttt{BT-Settl} (S only, no GP) (teff lo)'] = get_chains(sinfoni=True, teff_prior='tefflo')
 
-# models['\\texttt{Exo-REM} (SINFONI + GRAVITY, SPHERE GP)'] = get_chains(model='exo-rem', sinfoni=True, gravity=True, gp=True, teff_prior=None)
+models['\\texttt{Exo-REM} (S+G, yes GP)'] = get_chains(model='exo-rem', sinfoni=True, gravity=True, gp=True, teff_prior=None)
 
-def format_post(array, decimals=-1):
+def format_post(array, decimals=0):
     quantiles = np.quantile(array, [.16,.5,.84])
 
     median = np.round(quantiles[1], decimals=decimals)
@@ -78,7 +82,7 @@ for model_name in models.keys():
     if '(teff lo)' in model_name:
         print_model_name = ''
     
-    if not 'no SPHERE GP' in model_name:
+    if not 'no GP' in model_name:
         gp_amp = format_post(models[model_name].gp_amp.values, decimals=1)
         gp_len = format_post(models[model_name].gp_length_scale.values, decimals=1)
     else:
@@ -87,6 +91,9 @@ for model_name in models.keys():
     if 'Exo-REM' not in model_name:
         co = '--'
         feh = '--'
+    else:
+        co = format_post(models[model_name].co.values, decimals=2)
+        feh = format_post(models[model_name].feh.values, decimals=3)
     if 'SINFONI' in model_name:
         rv = format_post(models[model_name].rv_sinfoni.values, decimals=0)
     else:
