@@ -18,17 +18,6 @@ Fits to run:
 5. all astrometry with e fixed to 0 (True, True, True, True, False)
 6. accepted fit (#3) with linearly decreasing prior on e (True, True, True, False, True)
 
-Fits converged:
-
-
-Fits need to be run:
-1
-2
-2.5 
-3
-4
-5
-6
 """
 
 np.random.seed(10)
