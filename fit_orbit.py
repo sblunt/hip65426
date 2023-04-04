@@ -25,13 +25,13 @@ np.random.seed(10)
 """
 Begin keywords <<
 """
-run_fit = True
+run_fit = False
 
 lit_astrom = True
 first_grav = True
 second_grav = True
 fix_ecc = False
-lin_ecc_prior = True
+lin_ecc_prior = False
 
 savedir = 'results/'
 
