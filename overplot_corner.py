@@ -22,27 +22,37 @@ def combine_teff_hilow(fitname='sinfoni', model='bt-settl-cifist'):
         names += ['rv_sinfoni']
 
     names += ['']
+    chain_name = 'results/{}_tefflo_{}/multinest/post_equal_weights.dat'.format(fitname, model)
+    print(chain_name)
     loteff_post = pd.read_csv(
-        'results/{}_tefflo_{}/multinest/post_equal_weights.dat'.format(fitname, model),
+        chain_name,
         delim_whitespace=True,
         names = names
     )
 
+    chain_name = 'results/{}_teffhi_{}/multinest/post_equal_weights.dat'.format(fitname, model)
+    print(chain_name)
     hiteff_post = pd.read_csv(
-        'results/{}_teffhi_{}/multinest/post_equal_weights.dat'.format(fitname, model),
+        chain_name,
         delim_whitespace=True,
         names = names
     )
 
     return pd.concat([loteff_post, hiteff_post]), labels
 
-sphereGP = False
+sphereGP = True
+jwst=True
+
 fitname = 'sinfoni'
+if jwst:
+    fitname += '_jwst'
 if not sphereGP:
     fitname += '_nosphereGP'
 sinfoni_fit, labels = combine_teff_hilow(fitname=fitname)
 
 fitname = 'gravity'
+if jwst:
+    fitname += '_jwst'
 if not sphereGP:
     fitname += '_nosphereGP'
 gravity_fit, labels = combine_teff_hilow(fitname=fitname)

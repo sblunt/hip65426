@@ -19,6 +19,7 @@ def get_chains(gravity=False, sinfoni=False, model='bt-settl-cifist', gp=False, 
         name += 'gravity_'
     if sinfoni:
         name += 'sinfoni_'
+    name += 'jwst_'
     if not gp:
         name += 'nosphereGP_'
     else:
@@ -84,7 +85,7 @@ for model_name in models.keys():
     
     if not 'no GP' in model_name:
         gp_amp = format_post(models[model_name].gp_amp.values, decimals=1)
-        gp_len = format_post(models[model_name].gp_length_scale.values, decimals=1)
+        gp_len = format_post(np.exp(models[model_name].gp_length_scale.values), decimals=1)
     else:
         gp_amp = '--'
         gp_len = '--'
@@ -101,7 +102,7 @@ for model_name in models.keys():
 
     lum = calc_lum(models[model_name].rad.values, models[model_name].teff.values)
     print(
-        '{} & {} & {} & {} & {} & {} & {} & {} & {} & {} & {}\\\\'.format(
+        '{} & {} & {} & {} & {} & {} & {}  & {} & {} & {}\\\\'.format(
             print_model_name,
             format_post(models[model_name].teff.values),
             format_post(models[model_name].logg.values, decimals=2),
