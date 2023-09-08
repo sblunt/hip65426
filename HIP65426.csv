@@ -10,3 +10,4 @@ epoch,object,sep,sep_err,pa,pa_err,rv,rv_err,raoff,raoff_err,decoff,decoff_err,r
 58263.5,1,,,,,14,15,,,,,,Petrus+2021: pl_medvel (26 pm 15) - st_medvel (12.2 pm 0.3),
 59221.312,1,,,,,,,415.613,0.107484,-708.133,0.073203,-0.095039,GRAVITY+unpub,GRAVITY
 59602.271,1,,,,,,,416.269,0.035,-705.051,0.035,-0.224,GRAVITY+unpub,GRAVITY
+60071.208,1,,,,,,,416.980,0.281,-701.373,0.248,0.954,GRAVITY+unpub,GRAVITY
