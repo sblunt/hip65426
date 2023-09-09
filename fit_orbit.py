@@ -17,10 +17,10 @@ Fits to run:
 4. first 2 GRAVITY only (False, True, True, False, False)
 5. first 2 GRAVITY with e fixed to 0 (True, True, True, True, False)
 6. first 2 GRAVITY with linearly decreasing prior on e (True, True, True, False, True)
-
 7. all astrometry
 8. all astrometry with e fixed to 0
 9. all astrometry with linearly decreasing e prior
+10. all astrometry except NACO, linearly decreasing e prior
 """
 
 np.random.seed(10)
@@ -28,13 +28,14 @@ np.random.seed(10)
 """
 Begin keywords <<
 """
-run_fit = False
+run_fit = True
 make_corner = True
 
 lit_astrom = True
 first_grav = True
 second_grav = True
 third_grav = True
+exclude_naco = True
 fix_ecc = False
 lin_ecc_prior = True
 
@@ -55,6 +56,8 @@ if fix_ecc:
     savedir += "_fixed_ecc"
 if lin_ecc_prior:
     savedir += "_linear_ecc"
+if exclude_naco:
+    savedir += "_noNACO"
 """
 >> End keywords
 """
@@ -73,13 +76,15 @@ data_table = read_input.read_file(input_file)
 insts = data_table["instrument"]
 
 if not lit_astrom:
-    data_table = data_table[-3:]
+    data_table = data_table[data_table["instrument"] == "GRAVITY"]
 if not first_grav:
     data_table = data_table[0 : -2 & -2 :]
 if not second_grav:
     data_table = data_table[0 : -1 & -1]
 if not third_grav:
     data_table = data_table[0:-1]
+if exclude_naco:
+    data_table = data_table[data_table["instrument"] != "NACO"]
 
 print(data_table)
 
@@ -112,8 +117,8 @@ assert not HIP654_system.track_planet_perturbs
 num_threads = 50
 num_temps = 20
 num_walkers = 1000
-num_steps = 200_000_000  # n_walkers x n_steps_per_walker
-burn_steps = 100_000
+num_steps = 50_000_000  # 200_000_000  # n_walkers x n_steps_per_walker
+burn_steps = 10_000  # 100_000
 thin = 100
 
 if run_fit:
