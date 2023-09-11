@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import patches
 import matplotlib.transforms as transforms
@@ -28,16 +29,16 @@ np.random.seed(10)
 """
 Begin keywords <<
 """
-run_fit = True
+run_fit = False
 make_corner = True
 
 lit_astrom = True
 first_grav = True
 second_grav = True
 third_grav = True
-exclude_naco = True
+exclude_naco = False
 fix_ecc = False
-lin_ecc_prior = True
+lin_ecc_prior = False
 
 savedir = "results/"
 
@@ -137,26 +138,34 @@ HIP654_results = results.Results()  # create blank results object for loading
 HIP654_results.load_results("{}/chains.hdf5".format(savedir))
 
 # chop chains
-num_chop = 1000
-reshaped_post = HIP654_results.post.reshape(
-    (num_walkers, num_steps // num_walkers // thin, HIP654_results.post.shape[1])
-)
-HIP654_results.post = reshaped_post[:, -num_chop:, :].reshape(
-    (-1, HIP654_results.post.shape[1])
-)
+# num_chop = 1000
+# reshaped_post = HIP654_results.post.reshape(
+#     (num_walkers, num_steps // num_walkers // thin, HIP654_results.post.shape[1])
+# )
+# HIP654_results.post = reshaped_post[:, -num_chop:, :].reshape(
+#     (-1, HIP654_results.post.shape[1])
+# )
 
 # make corner plot
+
 if make_corner:
     if fix_ecc:
         param_list = ["sma1", "inc1", "aop1", "pan1", "tau1", "mtot", "plx"]
     else:
         param_list = None
 
+    corner_kwargs = {"show_titles": True}  # , "quantiles": [0.16, 0.84]}
+
     # median_values = np.median(HIP654_results.post, axis=0)
     # range_values = np.ones_like(median_values)*0.997 # Plot only 3-sigma range for each parameter
     fig = HIP654_results.plot_corner(
-        param_list=param_list, range=[(40, 120), 1, 1, 1, 1, 1, 1, 1]
+        param_list=param_list, range=[(40, 120), 1, 1, 1, 1, 1, 1, 1], **corner_kwargs
     )
+    for ax in fig.get_axes():
+        ax.tick_params(axis="both", labelsize=14)
+        ax.set_xlabel(ax.get_xlabel(), fontsize=14)
+        ax.set_ylabel(ax.get_ylabel(), fontsize=14)
+        ax.set_title(ax.get_title(), fontsize=14)
     plt.savefig("{}/corner.png".format(savedir), dpi=250)
 
 # make orbit plot
